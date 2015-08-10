@@ -49,6 +49,7 @@ import com.github.pires.obd.reader.io.ObdGatewayService;
 import com.github.pires.obd.reader.io.ObdProgressListener;
 import com.github.pires.obd.reader.net.ObdReading;
 import com.github.pires.obd.reader.net.ObdService;
+import com.github.pires.obd.reader.rabbitmq.RabbitMqManager;
 import com.github.pires.obd.reader.trips.TripLog;
 import com.github.pires.obd.reader.trips.TripRecord;
 import com.google.inject.Inject;
@@ -154,6 +155,9 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
     private SharedPreferences prefs;
     private boolean isServiceBound;
     private AbstractGatewayService service;
+
+    private RabbitMqManager rm = new RabbitMqManager();
+
     private final Runnable mQueueCommands = new Runnable() {
         public void run() {
             if (service != null && service.isRunning() && service.queueEmpty()) {
@@ -193,7 +197,13 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
                     ObdReading reading = new ObdReading(lat, lon, alt, System.currentTimeMillis(), vin, temp);
                     myCSVWriter.writeLineCSV(reading);
                 }
-                commandResult.clear();
+                final String vin = prefs.getString(ConfigActivity.VEHICLE_ID_KEY, "UNDEFINED_VIN");
+                Map<String, String> temp = new HashMap<String, String>();
+                temp.putAll(commandResult);
+                ObdReading reading = new ObdReading(lat, lon, alt, System.currentTimeMillis(), vin, temp);
+
+                rm.sendMessage(reading);
+                        commandResult.clear();
             }
             // run again in period defined in preferences
             new Handler().postDelayed(mQueueCommands, ConfigActivity.getObdUpdatePeriod(prefs));
@@ -251,6 +261,7 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
         });
     }
 
+    @Override
     public void stateUpdate(final ObdCommandJob job) {
         final String cmdName = job.getCommand().getName();
         String cmdResult = "";
@@ -330,6 +341,9 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
         context = this.getApplicationContext();
         // create a log instance for use by this application
         triplog = TripLog.getInstance(context);
+
+        rm.sendMessage(new ObdReading(1,1,1,1,"Hallo",new HashMap<String, String>()));
+
     }
 
     @Override
