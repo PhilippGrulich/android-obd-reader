@@ -40,9 +40,9 @@ public class RabbitMqManager {
             protected Void doInBackground(String... params) {
                 ConnectionFactory factory
                         = new ConnectionFactory();
-                factory.setHost("philipp-grulich.de");
-                factory.setPassword("PG?18161816");
-                factory.setUsername("pgrulich");
+                factory.setHost("");
+                factory.setPassword("");
+                factory.setUsername("");
                 Connection connection = null;
                 Channel channel;
                 try {
