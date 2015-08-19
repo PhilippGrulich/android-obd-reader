@@ -160,6 +160,7 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
 
     private final Runnable mQueueCommands = new Runnable() {
         public void run() {
+            Log.d(TAG,"Queue Tick");
             if (service != null && service.isRunning() && service.queueEmpty()) {
                 queueCommands();
 
@@ -268,8 +269,10 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
         final String cmdID = LookUpCommand(cmdName);
 
         if (job.getState().equals(ObdCommandJob.ObdCommandJobState.EXECUTION_ERROR)) {
+
             cmdResult = job.getCommand().getResult();
             if (cmdResult != null) {
+                Log.d(TAG,"Obd Status:" + cmdResult.toLowerCase());
                 obdStatusTextView.setText(cmdResult.toLowerCase());
             }
         } else if (job.getState().equals(ObdCommandJob.ObdCommandJobState.NOT_SUPPORTED)) {
@@ -586,7 +589,7 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
      */
     private void queueCommands() {
         if (isServiceBound) {
-            for (ObdCommand Command : ObdConfig.getCommands()) {
+            for (ObdCommand Command : ConfigActivity.getObdCommands(prefs)) {
                 if (prefs.getBoolean(Command.getName(), true))
                     service.queueJob(new ObdCommandJob(Command));
             }
