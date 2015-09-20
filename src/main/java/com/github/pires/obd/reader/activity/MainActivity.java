@@ -41,6 +41,7 @@ import com.github.pires.obd.commands.engine.RuntimeCommand;
 import com.github.pires.obd.enums.AvailableCommandNames;
 import com.github.pires.obd.reader.R;
 import com.github.pires.obd.reader.config.ObdConfig;
+import com.github.pires.obd.reader.gcm.RegistrationIntentService;
 import com.github.pires.obd.reader.io.AbstractGatewayService;
 import com.github.pires.obd.reader.io.LogCSVWriter;
 import com.github.pires.obd.reader.io.MockObdGatewayService;
@@ -52,6 +53,8 @@ import com.github.pires.obd.reader.net.ObdService;
 import com.github.pires.obd.reader.rabbitmq.RabbitMqManager;
 import com.github.pires.obd.reader.trips.TripLog;
 import com.github.pires.obd.reader.trips.TripRecord;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.inject.Inject;
 
 import java.io.IOException;
@@ -346,6 +349,14 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
         triplog = TripLog.getInstance(context);
 
         rm.sendMessage(new ObdReading(1,1,1,1,"Hallo",new HashMap<String, String>()));
+
+
+        if (checkPlayServices()) {
+            Log.d("GCM","PlayServices ist online");
+            // Start IntentService to register this application with GCM.
+            Intent intent = new Intent(this, RegistrationIntentService.class);
+            startService(intent);
+        }
 
     }
 
@@ -672,7 +683,26 @@ public class MainActivity extends RoboActivity implements ObdProgressListener, L
             gpsStatusTextView.setText(getString(R.string.status_gps_stopped));
         }
     }
-
+    /**
+     * Check the device to make sure it has the Google Play Services APK. If
+     * it doesn't, display a dialog that allows users to download the APK from
+     * the Google Play Store or enable it in the device's system settings.
+     */
+    private boolean checkPlayServices() {
+        GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
+        int resultCode = apiAvailability.isGooglePlayServicesAvailable(this);
+        if (resultCode != ConnectionResult.SUCCESS) {
+            if (apiAvailability.isUserResolvableError(resultCode)) {
+                apiAvailability.getErrorDialog(this, resultCode, 0)
+                        .show();
+            } else {
+                Log.i(TAG, "This device is not supported.");
+                finish();
+            }
+            return false;
+        }
+        return true;
+    }
     /**
      * Uploading asynchronous task
      */
